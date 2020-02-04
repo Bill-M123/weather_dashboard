@@ -1,5 +1,6 @@
 import pandas as pd
 import requests
+import os
 
 class Weather_Utils():
 
@@ -48,7 +49,9 @@ class Weather_Utils():
     def open_existing_weather_station_data(self,ws):
         '''WS is a weather station with name in the form of:
         "USW00014739".  Returns df with hemisphere, year, and season added.'''
-        p_df2=pd.read_csv(ws+'_temp.csv')
+        weather_station_path=os.getcwd()+'\\Data\\'+ws+'_temp.csv'
+        print('Weather_path {}'.format(weather_station_path))
+        p_df2=pd.read_csv(weather_station_path)
         p_df2=p_df2[['DATE','TMAX','TMIN']]
         p_df2['YEAR']=p_df2['DATE'].apply(lambda x: x.split('-')[0])
         return p_df2
