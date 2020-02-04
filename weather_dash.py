@@ -43,7 +43,7 @@ table_df=weather.make_summary_table(all_days_df,bf_slope)
 app.layout = html.Div([
 
     # First Row
-    html.Div(id=children = [
+    html.Div(children = [
     # Map
 
     # Data Table
