@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import requests
+import os
 
 import re
 
@@ -8,8 +10,8 @@ class Weather_Stations_Data():
     def __init__(self):
         ''' Constructor for this class. '''
         return
-        
-    def get_state_weather_station_info(state):
+
+    def get_state_weather_station_info(self,state):
         filename='coop-stations.txt'
 
         with open(filename) as f:
@@ -58,6 +60,81 @@ class Weather_Stations_Data():
 
         return df
 
-print(get_state_weather_station_info('NH'))
+    def get_weather_station_data(self,dataset='daily-summaries',
+        units='standard',stations='USW00014739',startDate='1937-01-01',
+        endDate='2019-12-31'):
+        '''Gets weather data from: https://www.ncei.noaa.gov using V1 of
+        the latest API as of 1/26/2020.
 
-print(df[8].unique())
+        Accepts inputs of stations (weather station id), startDate (string
+        in the format of yyyy-mm-dd), endDate, and units (standard or metric).
+
+        Defaults are: Boston, standard units, '1937-01-01', '2019-12-31' and
+        daily-summaries which contains most of the daily data for a particular
+        weather station (US dominated.)'''
+
+        params={'dataset':dataset,
+                'units':units,
+                'stations':stations,
+                'startDate':startDate,
+                'endDate':endDate,
+                'includeStationName':'true',
+                'includeStationLocation':'1',
+                'includeAttributes':'true',
+                'format':'json'
+               }
+        base_url='https://www.ncei.noaa.gov/access/services/data/v1?'
+
+        r = requests.get(base_url,params=params)
+        if r.status_code == 200:
+            print('Data for {} found.\n'.format(params['stations']))
+            df=pd.DataFrame(r.json())
+            df.to_csv(params['stations']+'.csv')
+            return df
+
+        else:
+            print('Problem accessing ncei.noaa.gov.  Status code: {} '.format(r.status_code))
+            print('Reason: {}'.format(r.reason))
+            print('string sent: {}'.format(r.url))
+            empty=[stations,r.status_code,r.reason,r.url]
+            return empty
+
+    def assemble_state_df(self, state_abb, dat_dir):
+        '''Accept string describing directory where weather files are kept,
+        assemble and state abbreviation.  Find all files of the form:
+        XX_USxxx.csv, assemble and return DF.'''
+
+        file_list=[x for x in os.listdir(dat_dir) if x.find(state_abb+'_US')>=0]
+
+        df=pd.DataFrame()
+        for f in file_list:
+            try:
+                tmp=pd.read_csv(dat_dir+f,index_col=0,low_memory=False)
+                df=df.append(tmp)
+            except:
+                print('problem with {}'.format(f))
+
+        def split_name(n):
+            try:
+                return n.split(',')[0]
+            except:
+                return n
+
+        df['NAME']=df.NAME.apply(split_name)
+        df['STATE']=state_abb
+        df['COUNTRY']='US'
+        df=df[['STATION','NAME','STATE','LATITUDE','LONGITUDE','DATE','TMIN',
+            'TMAX','COUNTRY']]
+        return df
+
+    def make_ws_info(self,df):
+        '''df is state df with all data.  return list of dicts in form:
+        [{'label':name,'value':ws_name},....], as well as a list for markers
+        in the map'''
+        df['tmp']=df.apply(lambda x: (x.NAME,x.STATION,x.LATITUDE,x.LONGITUDE),
+            axis=1)
+        ws_list=sorted(df.tmp.unique())
+        dr_dn_options=[{'label':x[0],'value':x[1]} for x in ws_list]
+
+        del df['tmp']
+        return ws_list,dr_dn_options

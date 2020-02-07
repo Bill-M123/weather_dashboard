@@ -13,3 +13,14 @@ Currently available:
 3)  Bar chart showing hottest and coldest 20 years in data.  This chart corresponds to many articles that reference which decades are hottest.
 
 4)  Larger chart that shows ranges of hot and cold temperatures, average annual temp, and complete best fit line.
+
+## Organization
+
+Top level: weather_dash.py is a Dash based dashboard that summarizes weather from a particular weather station.
+
+weather_utilities: has three files which are importable:
+weather_stations_data.py contains all of the functions needed to access the NOAA API
+
+weather_utilities.py contains functions which slice and process data for plotting
+
+plot_utilites.py contains utilies to make the Dash framework function a little easier
