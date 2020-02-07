@@ -7,6 +7,8 @@ from dash.dependencies import Input, Output, State
 import plotly.graph_objs as go
 import pandas as pd
 import numpy as np
+import json
+
 from numpy import random
 
 import datetime as dt
@@ -44,7 +46,6 @@ app.layout = html.Div([
 
     # First Row
     html.Div(children = [
-    # Map
 
     # Data Table
     html.Div(id='summary_table',children = [
@@ -82,56 +83,62 @@ app.layout = html.Div([
             marks={i: i for i in range(1940,2030,20)},
             value=[1940,2020],
             updatemode='drag')],
-        style={'margin-top':'15px','vertical-align':'bottom'}),
+        style={'margin-top':'15px','vertical-align':'bottom',
+        'width':'15vw','horizontal-align':'left'}),
 
-            ],style={'display':'inline-block',
+        html.Div(children=[html.Button(id='update-plots',
+        style={'margin-top':'15px',
+        'align-horizontal':'right',
+        'color':'white','bg':'white',})]),
+
+        ],#end Data Table Children
+        style={'display':'inline-block',
             'vertical-align': 'top',
             'height':'300','width': '25vw',
             'margin-right': '20px',
             'margin-left': '10px',
-            'backgroundColor':'white'}),
+            'background-color':'white'}),#End Data Table
 
+    html.Div(id='bar-graph',children = [\
     dcc.Graph(figure=make_plot.get_htcld_bar_data(htcld_years),
-        config={'modeBarButtonsToRemove': ['toggleSpikelines', "select2d", "lasso2d"]},
-        style={'display':'inline-block','vertical-align': 'top',
-        'width': '45vw','height':'50vh','margin-right': '20px',}),
+        config={'modeBarButtonsToRemove': ['toggleSpikelines',
+        "select2d", "lasso2d","hoverCompareCartesian"]},
+        style={'vertical-align': 'top',
+        'width': '100%','height':'100%',}),],style={'display':'inline-block','vertical-align': 'center',
+        'width': '45%','height':'95%','margin-right': '20px',
+        'margin-top': '10px','margin-bottom': '30px',}),
 
-        html.Div(children = [
-                    html.Iframe(id='map',srcDoc=open('my_cape_house.html','r').read(),
-                    height='300')],style={'display':'inline-block',
-                    'margin-right': '0px',
-                    'backgroundColor':'white',
-                    'vertical-align': 'top',
-                    'horizontal-align': 'right'}),],
-    #dcc.Graph(make_plot.get_htcld_bar_fig(htcld_years))
+    html.Div(children = [
+        html.Iframe(id='map',
+        srcDoc=open('my_cape_house.html','r').read(),
+        height='250vh', width='95%')],style={'display':'inline-block',
+        'margin-right': '0px',
+        'margin-top': '30px',
+        'backgroundColor':'white',
+        'vertical-align': 'top',
+        'horizontal-align': 'center'})],
 
-    # set the sizing of the parent div
+    # set the sizing of the first row parent div
     style = {'display': 'inline-block',
     'height': '50vh',
-    'width': '100vw',
+    'width': '100%',
     'vertical-align': 'bottom',
     'backgroundColor':'white'}),#<--End First Row
-
+    html.Hr(),
 
     #4 Readings per year
+    html.Div(id='yearly-scatter',children = [
     dcc.Graph(figure=make_plot.get_annual_hilo_trend_data(years_df),
-                #'data': make_plot.scatter_just_data(day_per_wk_df),
-                #'layout':{#'title': 'Boston',
-                #'xaxis':{'title':xaxis_title},
-                #        'yaxis':{'title':yaxis_title},
-                #        'marker_color':['crimson','cornflowerblue'],
-                #        'legend':{'x':0,'y':110,'orientation':'h'},
-                #        'margin': {'l':40, 't':60, 'r':25, 'b':60},
-                #            }},
-
+                config={'modeBarButtonsToRemove': ['toggleSpikelines',
+                "select2d", "lasso2d","hoverCompareCartesian"]},
                  style={
-                    'margin':{'l':2,'r':2},
+                    'margin':{'l':2,'r':2,'b':2},
                     'float':'left',
                     'hovermode':'closest',
                     'width':'100vw',
-                    'height':'45vh'
+                    'height':'50vh'
 
-                    })#End second Row
+                    })])#End second Row
 
     ])
 @app.callback(Output('summary_table','children'),
@@ -155,7 +162,7 @@ def update_value(slider_range):
     bf_intercept,bf_slope,bf=make_plot.best_fit(years_df[['YEAR','T_avg']])
 
     table_df=weather.make_summary_table(all_days_df,bf_slope)
-    print(table_df.head(10))
+
     child=[
             html.H1('Boston',style={'vertical-align': 'top',
             'margin-top': '0px',}),
@@ -164,7 +171,6 @@ def update_value(slider_range):
             data=table_df.to_dict('records'),
             style_cell={'textAlign': 'left'},
             style_header={
-            'backgroundColor': 'white',
             'fontWeight': 'bold'},
             style_as_list_view=True,
             style_cell_conditional=[
@@ -177,11 +183,13 @@ def update_value(slider_range):
             {
                 'if': {'column_id': 'Dates'},
                 'textAlign': 'center',
+                'fontWeight': 'bold',
                 'width':'8%'
             },
             {
                 'if': {'column_id': 'Temp'},
                 'textAlign': 'right',
+                'fontWeight': 'bold',
                 'width':'7%',
             }
             ]),
@@ -191,11 +199,88 @@ def update_value(slider_range):
             marks={i: i for i in range(1940,2030,20)},
             updatemode='drag',
             value=[slider_range[0],slider_range[1]])],
-        style={'margin-top':'15px','vertical-align':'bottom'}),
+        style={'margin-top':'15px','vertical-align':'bottom',
+        'width':'20vw','horizontal-align':'left','display': 'inline-block',
+        'color':'cornflowerblue'}),
 
+        html.Div(children=[html.Button(id='update-plots',
+        children='Sync',n_clicks=0,style={'display': 'inline-block',
+        'background-color':'white',
+        'boxshadow':'none',
+        'color':'lightgrey',
+        'horizontal-align':'right',
+        'vertical-align':'top',
+        'margin':0})],style={'display': 'inline-block',
+        'vertical-align':'middle',
+        'horizontal-align':'right','margin':0},)
             ]
     return child
 
+@app.callback(Output('bar-graph','children'),
+                [Input('update-plots', 'n_clicks')],
+                [State('range_slider','value')])
+def update_bar(n_clicks,slider_range):
+    ctx = dash.callback_context
+    ctx_msg = json.dumps({
+        'states': ctx.states,
+        'triggered': ctx.triggered,
+        'inputs': ctx.inputs})
+    print('ctx',ctx_msg)
+    all_days_df=raw_all_days_df.copy()
+    all_days_df['year']=all_days_df.YEAR.apply(int)
+
+    day_per_wk_df=weather.one_day_per_week(all_days_df)
+    years_df=weather.calculate_yearly_data(all_days_df)
+    year_count,yr_avg_dec_df,htcld_years=\
+        weather.calculate_yearly_summaries(years_df)
+    htcld_years['dec']=htcld_years['Decade'].str.strip("'s").apply(int)
+
+    htcld_years=htcld_years.loc[((htcld_years.dec>=slider_range[0])&\
+                                (htcld_years.dec<=slider_range[1])),:]
+    htcld_years=htcld_years.drop('dec',axis=1)
+    print('htcld post drop\n',htcld_years.head(2))
+    child = [\
+    dcc.Graph(figure=make_plot.get_htcld_bar_data(htcld_years),
+        config={'modeBarButtonsToRemove': ['toggleSpikelines',
+        "select2d", "lasso2d","hoverCompareCartesian"]},
+        style={'vertical-align': 'top',
+        'width': '95%','height':'100%',}),]
+
+    return child
+
+
+@app.callback(Output('yearly-scatter','children'),
+                [Input('update-plots', 'n_clicks')],
+                [State('range_slider','value')])
+def update_all_time(n_clicks,slider_range):
+
+    all_days_df=raw_all_days_df.copy()
+
+    all_days_df['year']=all_days_df.YEAR.apply(int)
+    all_days_df=all_days_df.loc[(all_days_df['year']>=slider_range[0])&\
+                                (all_days_df['year']<=slider_range[1]),:].copy()
+
+    years_df=weather.calculate_yearly_data(all_days_df)
+    years_df['YEAR']=years_df['YEAR'].apply(int)
+    print('Liam\n',years_df.head(4))
+
+    years_df=years_df.loc[((years_df.YEAR>=slider_range[0])&\
+                                (years_df.YEAR<=slider_range[1])),:]
+
+    child = [\
+    dcc.Graph(figure=make_plot.get_annual_trend_data(years_df),
+                config={'modeBarButtonsToRemove': ['toggleSpikelines',
+                "select2d", "lasso2d","hoverCompareCartesian"]},
+                 style={
+                    'margin':{'l':2,'r':2,'b':2},
+                    'float':'left',
+                    'hovermode':'closest',
+                    'width':'100vw',
+                    'height':'50vh'
+
+                    })]
+
+    return child
 
 if __name__ == '__main__':
     app.run_server()

@@ -1,93 +1,55 @@
 import pandas as pd
 import numpy as np
 
-from weather_utilities.weather_utilities import Weather_Utils
-from weather_utilities.plot_utilities import Plot_Utils
+import re
 
-weather =Weather_Utils()
-make_plot=Plot_Utils()
+def get_state_weather_station_info(state):
+    filename='coop-stations.txt'
 
-weather_station='Boston'
-xaxis_title='1 Reading per Week'
-yaxis_title='Degrees F'
+    with open(filename) as f:
+        content = f.readlines()
+    # Remove whitespace characters like `\n` at the end of each line
+    content = [x.strip() for x in content]
 
-#yearly graph
-df=weather.open_existing_weather_station_data('USW00014739')
-years_df=weather.calculate_yearly_data(df)
-print('years_df\n',years_df.head(1))
-###
-import plotly.graph_objects as go
+    station_re=re.compile(r'[A-Z]{3}[0-9]{8}')
+    ma_re = re.compile('\s{}\s'.format(state))
 
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=years_df.YEAR, y=years_df.TMAX_max,
-    fill=None,
-    mode='lines',
-    line_color='crimson',
-    name='Yearly Max'
-    ))
-fig.add_trace(go.Scatter(
-    x=years_df.YEAR, y=years_df.TMIN_max,
-    fill='tonexty', # fill area between trace0 and trace1
-    mode='lines',
-    line_color='crimson',
-    line={'dash': 'dash'},
-    name='Warmest cooling'))
+    united_re=re.compile(r'\sUNITED\s')
+    states_re=re.compile(r'\sSTATES\s')
+    geo_code_re=re.compile(r'\s[0-9]{2}\s')
+    lat_re=re.compile(r'\s[0-9]{2,3}\.[0-9]{0,5}\s')
+    lon_re=re.compile(r'\s-[0-9]{2,3}\.[0-9]{0,5}\s')
+    stations_list=[]
+    for c in content:
+        tmp=station_re.findall(c)
+        tmp1=ma_re.findall(c)
+        if tmp:
+            if tmp1:
 
-fig.add_trace(go.Scatter(x=years_df.YEAR, y=years_df.TMAX_min,
-    fill=None,
-    mode='lines',
-    line_color='cornflowerblue',
-    line={'dash': 'dash'},
-    name='Coolest Warming'
-    ))
-fig.add_trace(go.Scatter(
-    x=years_df.YEAR, y=years_df.TMIN_min,
-    fill='tonexty', # fill area between trace0 and trace1
-    mode='lines',
-    line_color='cornflowerblue',
-    name='Yearly min'))
+                station_pos=station_re.search(c)
+                united_pos=united_re.search(c)
+                loc_str=c[station_pos.end():united_pos.start()].strip()
+                loc_str=' '.join([x for x in loc_str.split() if x!=''])
 
-fig.add_trace(go.Scatter(x=years_df.YEAR, y=years_df.T_avg,
-    fill=None,
-    mode='lines',
-    line_color='gray',
-    line={'width':5},
-    name='Annual Avg Temp'
-    ))
+                state_pos=ma_re.search(c)
+                gc_pos=geo_code_re.search(c)
+                county_str=c[state_pos.end():gc_pos.start()].strip()
+                county_str=' '.join([x for x in county_str.split() if x!=''])
+                gc_pos=geo_code_re.search(c)
 
-bf_slope,bf_intercept,bf=make_plot.best_fit(years_df[['YEAR','T_avg']])
-fig.add_trace(go.Scatter(x=bf.YEAR, y=bf.BF,
-    fill=None,
-    mode='lines',
-    line={'dash': 'dash','width':3},
-    line_color='black',
-    line_width=3,
-    name='Best Fit Annual Temp'
-    ))
+                station_info=[station_re.findall(c)[0],
+                                    loc_str,
+                                    county_str,
+                                    state,
+                                    geo_code_re.findall(c)[0],
+                                    lat_re.findall(c)[0],lon_re.findall(c)[0]
+                                    ]
+                if len(station_info)==7:
+                    stations_list.append(station_info)
 
-fig.show()
+    df=pd.DataFrame(columns=['Station','Location','County','State',
+        'Geo_Code','Latitude','Longitude'],data=stations_list)
 
-year_count,yr_avg_dec_df,htcld_years=\
-    weather.calculate_yearly_summaries(years_df)
+    return df
 
-print('year_count: {}'.format(year_count))
-print('decade yr_avg_dec_df:\n',yr_avg_dec_df.head(3),'\n')
-print('htcld_years summary:\n',htcld_years.head(3),'\n')
-
-fig = go.Figure(data=[
-    go.Bar(name='Hottest 10', x=htcld_years.Decade.values, y=htcld_years.T10.values,
-    marker_color='red'),
-    go.Bar(name='2nd Hottest 10', x=htcld_years.Decade.values, y=htcld_years.T20.values,
-    marker_color='crimson'),
-
-    go.Bar(name='2nd Coldest 10', x=htcld_years.Decade.values, y=htcld_years.B10.values,
-    marker_color='cornflowerblue'),
-    go.Bar(name='Coldest 10', x=htcld_years.Decade.values, y=htcld_years.B20.values,
-    marker_color='blue')
-])
-# Change the bar mode
-fig.update_layout(barmode='stack')
-fig.show()
-
-fig=make_plot.get_htcld_bar_fig(htcld_years)
-fig.show()
+print(get_state_weather_station_info('NH'))
