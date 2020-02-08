@@ -75,11 +75,13 @@ app.layout = html.Div([
             {
                 'if': {'column_id': 'Dates'},
                 'textAlign': 'center',
+                'fontWeight': 'bold',
                 'width':'8%'
             },
             {
                 'if': {'column_id': 'Temp'},
                 'textAlign': 'right',
+                'fontWeight': 'bold',
                 'width':'7%',
             }
             ]),
@@ -96,7 +98,6 @@ app.layout = html.Div([
         html.Div(children=[html.Button(id='update-plots',
         children='Sync',n_clicks=0,
         style={'margin-top':'15px',
-        'align-horizontal':'right',
         'display':'inline-block',
         'color':'white','bg':'white',})],style={
         'align-horizontal':'right',
@@ -115,11 +116,12 @@ app.layout = html.Div([
     dcc.Graph(id='bar-graph', figure=make_plot.get_htcld_bar_data(htcld_years),
         config={'modeBarButtonsToRemove': ['toggleSpikelines',
         "select2d", "lasso2d","hoverCompareCartesian"]},
-        style={'vertical-align': 'top',
-        'width': '100%','height':'90%',}),],style={'display':'inline-block',
-        'vertical-align': 'center',
-        'width': '45%','height':'95%','margin-right': '20px',
-        'margin-top': '10px','margin-bottom': '10px',}),
+        style={'vertical-align': 'bottom',
+        'width': '100%','height':'90%','margin-top': '10px',}),],
+        style={'display':'inline-block',
+        'vertical-align': 'middle',
+        'width': '45%','height':'45vh','margin-right': '20px',
+        'margin-bottom': '10px',}),
 
     html.Div(children = [
         html.Iframe(id='map',
@@ -148,34 +150,19 @@ app.layout = html.Div([
                     'margin':{'l':2,'r':2,'b':2},
                     'float':'left',
                     'hovermode':'closest',
-                    'width':'100vw',
-                    'height':'50vh'
+                    'width':'95vw',
+                    'height':'45vh'
 
                     })])#End second Row
 
     ])
 @app.callback(Output('tablea','data'),
-                #[Input('update-plots', 'n_clicks')],
                 [Input('range_slider','value')])
 def update_value(slider_range):
 
     print(raw_all_days_df.head(2))
-    all_days_df=raw_all_days_df.copy()
-    all_days_df['year']=all_days_df.YEAR.apply(int)
-    all_days_df=all_days_df.loc[(all_days_df['year']>=slider_range[0])&\
-                                (all_days_df['year']<=slider_range[1]),:].copy()
-    day_per_wk_df=weather.one_day_per_week(all_days_df)
-    years_df=weather.calculate_yearly_data(all_days_df)
-    year_count,yr_avg_dec_df,htcld_years=\
-        weather.calculate_yearly_summaries(years_df)
-    warmest_day,warmest_day_temp,coldest_day,coldest_day_temp=\
-        weather.get_hot_cold_days(all_days_df)
-    hottest_year,hottest_year_temp,coldest_year,coldest_year_temp=\
-        weather.get_hot_cold_years(all_days_df)
-
-    bf_intercept,bf_slope,bf=make_plot.best_fit(years_df[['YEAR','T_avg']])
-
-    table_df=weather.make_summary_table(all_days_df,bf_slope)
+    table_df=weather.slider_input_to_table(raw_all_days_df,
+                slider_range[0],slider_range[1])
     data=table_df.to_dict('records')
     return data#child
 

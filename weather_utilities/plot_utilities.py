@@ -123,7 +123,7 @@ class Plot_Utils():
             go.Bar(name='Cold 1-10', x=htcld_years.Decade.values, y=htcld_years.B10.values,
             marker_color='blue')]
 
-        layout={'title': 'Number of hot and cold years\n',
+        layout={'title': {'text':'Number of hot and cold years', 'y':1.0},
                 'barmode':'stack',
                 'legend':{'y':-0.10,'orientation':'h'},
                 'margin': {'l':40, 't':20, 'r':15, 'b':10},

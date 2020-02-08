@@ -1,11 +1,13 @@
 import pandas as pd
 import requests
 import os
+from weather_utilities.plot_utilities import Plot_Utils
 
 class Weather_Utils():
 
     def __init__(self):
         ''' Constructor for this class. '''
+        self.make_plot=Plot_Utils()
         return
 
     def get_weather_station_data(self,dataset='daily-summaries',
@@ -254,4 +256,24 @@ class Weather_Utils():
 
         table_df=table_df.append(tmp)
         del tmp
+        return table_df
+
+    def slider_input_to_table(self,raw_all_days_df,slide_low,slide_high):
+
+        all_days_df=raw_all_days_df.copy()
+        all_days_df['year']=all_days_df.YEAR.apply(int)
+        all_days_df=all_days_df.loc[(all_days_df['year']>=slide_low)&\
+                                    (all_days_df['year']<=slide_high),:].copy()
+        day_per_wk_df=self.one_day_per_week(all_days_df)
+        years_df=self.calculate_yearly_data(all_days_df)
+        year_count,yr_avg_dec_df,htcld_years=\
+            self.calculate_yearly_summaries(years_df)
+        warmest_day,warmest_day_temp,coldest_day,coldest_day_temp=\
+            self.get_hot_cold_days(all_days_df)
+        hottest_year,hottest_year_temp,coldest_year,coldest_year_temp=\
+            self.get_hot_cold_years(all_days_df)
+
+        bf_intercept,bf_slope,bf=self.make_plot.best_fit(years_df[['YEAR','T_avg']])
+
+        table_df=self.make_summary_table(all_days_df,bf_slope)
         return table_df
