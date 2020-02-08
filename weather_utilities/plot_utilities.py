@@ -125,8 +125,8 @@ class Plot_Utils():
 
         layout={'title': 'Number of hot and cold years\n',
                 'barmode':'stack',
-                'legend':{'y':1.10,'orientation':'h'},
-                'margin': {'l':40, 't':10, 'r':15, 'b':20},
+                'legend':{'y':-0.10,'orientation':'h'},
+                'margin': {'l':40, 't':20, 'r':15, 'b':10},
                 }
 
         fig={'data':data,'layout':layout}

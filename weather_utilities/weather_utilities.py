@@ -46,6 +46,10 @@ class Weather_Utils():
             empty=[]
             return empty
 
+    def open_all_state_data(self,file):
+        '''Open all data df process as existing ws.'''
+
+
     def open_existing_weather_station_data(self,ws):
         '''WS is a weather station with name in the form of:
         "USW00014739".  Returns df with hemisphere, year, and season added.'''
@@ -55,6 +59,16 @@ class Weather_Utils():
         p_df2=p_df2[['DATE','TMAX','TMIN']]
         p_df2['YEAR']=p_df2['DATE'].apply(lambda x: x.split('-')[0])
         return p_df2
+
+    def open_all_state_data(self,file_name):
+        '''Open all data df process as existing ws.'''
+        weather_station_path=file_name
+        print('Weather_path {}'.format(weather_station_path))
+        p_df2=pd.read_csv(file_name)
+        p_df2=p_df2[['STATION','DATE','TMAX','TMIN']]
+        p_df2['YEAR']=p_df2['DATE'].apply(lambda x: x.split('-')[0])
+        return p_df2
+
 
     def one_day_per_week(self,df):
         '''Slice dataframe to one day per week on column DATE'''

@@ -1,3 +1,8 @@
+'''This program reaches out to the NOAA api and gets back valid Massachusetts
+weather station data.  It also generates files that show which weather
+stations in the list have valid and invalid data.'''
+
+
 import pandas as pd
 import numpy as np
 import os
@@ -34,11 +39,12 @@ for s in station_list:
 
 if invalid_stations:
     invalid_df=pd.DataFrame(columns=['WS','Code','Reason','url'],data=invalid_stations)
-    invalid_df.to_csv(data_dir+'invalid.csv')
+    invalid_df.to_csv(data_dir+'list_invalid.csv')
     print('\n\nInvalid Stations',invalid_df.head(3))
 
 if valid_stations:
     valid_df=pd.DataFrame(columns=['State','WS'],data=valid_stations)
+    valid_df=valid_df.to_csv(data_dir+'list_invalid.csv')
     print('\n\nValid Stations\n',valid_df.head(3))
 
 
