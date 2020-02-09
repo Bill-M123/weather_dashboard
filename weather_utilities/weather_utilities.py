@@ -48,10 +48,6 @@ class Weather_Utils():
             empty=[]
             return empty
 
-    def open_all_state_data(self,file):
-        '''Open all data df process as existing ws.'''
-
-
     def open_existing_weather_station_data(self,ws):
         '''WS is a weather station with name in the form of:
         "USW00014739".  Returns df with hemisphere, year, and season added.'''
@@ -263,7 +259,7 @@ class Weather_Utils():
         all_days_df=raw_all_days_df.copy()
         all_days_df['year']=all_days_df.YEAR.apply(int)
         all_days_df=all_days_df.loc[(all_days_df['year']>=slide_low)&\
-                                    (all_days_df['year']<=slide_high),:].copy()
+                                    (all_days_df['year']<slide_high),:].copy()
         day_per_wk_df=self.one_day_per_week(all_days_df)
         years_df=self.calculate_yearly_data(all_days_df)
         year_count,yr_avg_dec_df,htcld_years=\
@@ -277,3 +273,31 @@ class Weather_Utils():
 
         table_df=self.make_summary_table(all_days_df,bf_slope)
         return table_df
+
+    def set_all_dfs(self,all_state_df,station_id='USW00014739',
+        slider_low=1940,slider_high=2020):
+        all_days_df=all_state_df.loc[all_state_df.STATION==station_id,:].copy()
+        raw_all_days_df=all_days_df.copy()
+        all_days_df['year']=all_days_df.YEAR.apply(int)
+        all_days_df=all_days_df.loc[(all_days_df['year']>=slider_low)&\
+                                    (all_days_df['year']<slider_high),:]
+
+        day_per_wk_df=self.one_day_per_week(all_days_df)
+        years_df=self.calculate_yearly_data(all_days_df)
+        year_count,yr_avg_dec_df,htcld_years=\
+            self.calculate_yearly_summaries(years_df)
+
+        warmest_day,warmest_day_temp,coldest_day,coldest_day_temp=\
+            self.get_hot_cold_days(all_days_df)
+        hottest_year,hottest_year_temp,coldest_year,coldest_year_temp=\
+            self.get_hot_cold_years(all_days_df)
+
+        bf_intercept,bf_slope,bf=\
+            self.make_plot.best_fit(years_df[['YEAR','T_avg']])
+
+        table_df=self.make_summary_table(all_days_df,bf_slope)
+
+        return all_days_df, raw_all_days_df,day_per_wk_df,years_df,\
+            year_count,yr_avg_dec_df,htcld_years,warmest_day,\
+            warmest_day_temp,coldest_day,coldest_day_temp,bf_intercept,\
+            bf_slope,bf,table_df

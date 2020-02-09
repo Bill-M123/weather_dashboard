@@ -28,23 +28,28 @@ xaxis_title='1 Reading per Week'
 yaxis_title='Degrees F'
 
 all_state_df=weather.open_all_state_data(data_dir+'ma_weather_stations.csv')
-#all_days_df=weather.open_existing_weather_station_data('USW00014739')
-all_days_df=all_state_df.loc[all_state_df.STATION=='USW00014739',:].copy()
-raw_all_days_df=all_days_df.copy()
 
-day_per_wk_df=weather.one_day_per_week(all_days_df)
-years_df=weather.calculate_yearly_data(all_days_df)
-year_count,yr_avg_dec_df,htcld_years=\
-    weather.calculate_yearly_summaries(years_df)
+#all_days_df=all_state_df.loc[all_state_df.STATION=='USW00014739',:].copy()
+#raw_all_days_df=all_days_df.copy()
 
-warmest_day,warmest_day_temp,coldest_day,coldest_day_temp=\
-    weather.get_hot_cold_days(all_days_df)
-hottest_year,hottest_year_temp,coldest_year,coldest_year_temp=\
-    weather.get_hot_cold_years(all_days_df)
+#day_per_wk_df=weather.one_day_per_week(all_days_df)
+#years_df=weather.calculate_yearly_data(all_days_df)
+#year_count,yr_avg_dec_df,htcld_years=\
+#    weather.calculate_yearly_summaries(years_df)
 
-bf_intercept,bf_slope,bf=make_plot.best_fit(years_df[['YEAR','T_avg']])
+#warmest_day,warmest_day_temp,coldest_day,coldest_day_temp=\
+#    weather.get_hot_cold_days(all_days_df)
+#hottest_year,hottest_year_temp,coldest_year,coldest_year_temp=\
+#    weather.get_hot_cold_years(all_days_df)
 
-table_df=weather.make_summary_table(all_days_df,bf_slope)
+#bf_intercept,bf_slope,bf=make_plot.best_fit(years_df[['YEAR','T_avg']])
+
+#table_df=weather.make_summary_table(all_days_df,bf_slope)
+
+all_days_df, raw_all_days_df,day_per_wk_df,years_df,\
+year_count,yr_avg_dec_df,htcld_years,warmest_day,\
+warmest_day_temp,coldest_day,coldest_day_temp,bf_intercept,\
+bf_slope,bf,table_df=weather.set_all_dfs(all_state_df)
 
 app.layout = html.Div([
 
@@ -172,6 +177,8 @@ def update_bar(slider_range):
 
     all_days_df=raw_all_days_df.copy()
     all_days_df['year']=all_days_df.YEAR.apply(int)
+    all_days_df=all_days_df.loc[(all_days_df['year']>=slider_range[0])&\
+                                (all_days_df['year']<slider_range[1]),:].copy()
 
     day_per_wk_df=weather.one_day_per_week(all_days_df)
     years_df=weather.calculate_yearly_data(all_days_df)
@@ -196,7 +203,7 @@ def update_all_time(slider_range):
 
     all_days_df['year']=all_days_df.YEAR.apply(int)
     all_days_df=all_days_df.loc[(all_days_df['year']>=slider_range[0])&\
-                                (all_days_df['year']<=slider_range[1]),:].copy()
+                                (all_days_df['year']<slider_range[1]),:].copy()
 
     years_df=weather.calculate_yearly_data(all_days_df)
     years_df['YEAR']=years_df['YEAR'].apply(int)
