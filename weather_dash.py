@@ -16,10 +16,12 @@ import datetime as dt
 
 from weather_utilities.weather_utilities import Weather_Utils
 from weather_utilities.plot_utilities import Plot_Utils
+from weather_utilities.weather_stations_data import Weather_Stations_Data
 
 data_dir=os.getcwd()+'\\data\\'
 weather =Weather_Utils()
 make_plot=Plot_Utils()
+get_wsd=Weather_Stations_Data()
 
 app = dash.Dash()
 
@@ -29,23 +31,15 @@ yaxis_title='Degrees F'
 
 all_state_df=weather.open_all_state_data(data_dir+'ma_weather_stations.csv')
 
-#all_days_df=all_state_df.loc[all_state_df.STATION=='USW00014739',:].copy()
-#raw_all_days_df=all_days_df.copy()
+# Set up weather station dr_dn_options
+ws_list,dr_dn_options=get_wsd.make_ws_info(all_state_df)
+#print('From function\n',dr_dn_options)
+#print("\n\noptions=[{'label': 'New York City', 'value': 'NYC'},\
+#            {'label': 'Montréal', 'value': 'MTL'},\
+#            {'label': 'San Francisco', 'value': 'SF'},\
+#        ]")
 
-#day_per_wk_df=weather.one_day_per_week(all_days_df)
-#years_df=weather.calculate_yearly_data(all_days_df)
-#year_count,yr_avg_dec_df,htcld_years=\
-#    weather.calculate_yearly_summaries(years_df)
-
-#warmest_day,warmest_day_temp,coldest_day,coldest_day_temp=\
-#    weather.get_hot_cold_days(all_days_df)
-#hottest_year,hottest_year_temp,coldest_year,coldest_year_temp=\
-#    weather.get_hot_cold_years(all_days_df)
-
-#bf_intercept,bf_slope,bf=make_plot.best_fit(years_df[['YEAR','T_avg']])
-
-#table_df=weather.make_summary_table(all_days_df,bf_slope)
-
+# Set up all dfs and individual notable dates
 all_days_df, raw_all_days_df,day_per_wk_df,years_df,\
 year_count,yr_avg_dec_df,htcld_years,warmest_day,\
 warmest_day_temp,coldest_day,coldest_day_temp,bf_intercept,\
@@ -59,8 +53,13 @@ app.layout = html.Div([
     # Data Table
     html.Div(id='summary_table',children = [
 
-            html.H1('Boston',style={'vertical-align': 'top',
-            'margin-top': '0px',}),
+            #html.H1('Boston',style={'vertical-align': 'top',
+            #'margin-top': '0px',}),
+
+            dcc.Dropdown(id='ws-drop-down',options=dr_dn_options,value='USW00014739',
+            style={'vertical-align': 'top',
+            'margin-top': '0px',
+            'fontWeight': 'bold'}),
 
             dash_table.DataTable(id='tablea',
             columns=[{"name": i, "id": i} for i in table_df.columns],
@@ -162,8 +161,14 @@ app.layout = html.Div([
 
     ])
 @app.callback(Output('tablea','data'),
-                [Input('range_slider','value')])
-def update_value(slider_range):
+                [Input('range_slider','value'),
+                Input('ws-drop-down','value')])
+def update_value(slider_range,ws_id):
+
+    all_days_df, raw_all_days_df,day_per_wk_df,years_df,\
+    year_count,yr_avg_dec_df,htcld_years,warmest_day,\
+    warmest_day_temp,coldest_day,coldest_day_temp,bf_intercept,\
+    bf_slope,bf,table_df=weather.set_all_dfs(all_state_df,station_id=ws_id)
 
     print(raw_all_days_df.head(2))
     table_df=weather.slider_input_to_table(raw_all_days_df,
@@ -172,10 +177,16 @@ def update_value(slider_range):
     return data#child
 
 @app.callback(Output('bar-graph','figure'),
-                [Input('range_slider','value')])
-def update_bar(slider_range):
+                [Input('range_slider','value'),
+                Input('ws-drop-down','value')])
+def update_bar(slider_range,ws_id):
 
-    all_days_df=raw_all_days_df.copy()
+    all_days_df, raw_all_days_df,day_per_wk_df,years_df,\
+    year_count,yr_avg_dec_df,htcld_years,warmest_day,\
+    warmest_day_temp,coldest_day,coldest_day_temp,bf_intercept,\
+    bf_slope,bf,table_df=weather.set_all_dfs(all_state_df)
+
+    #all_days_df=raw_all_days_df.copy()
     all_days_df['year']=all_days_df.YEAR.apply(int)
     all_days_df=all_days_df.loc[(all_days_df['year']>=slider_range[0])&\
                                 (all_days_df['year']<slider_range[1]),:].copy()
@@ -196,10 +207,15 @@ def update_bar(slider_range):
 
 
 @app.callback(Output('yearly-scatter','figure'),
-                [Input('range_slider','value')])
-def update_all_time(slider_range):
+                [Input('range_slider','value'),
+                Input('ws-drop-down','value')])
+def update_all_time(slider_range,ws_id):
 
-    all_days_df=raw_all_days_df.copy()
+    #all_days_df=raw_all_days_df.copy()
+    all_days_df, raw_all_days_df,day_per_wk_df,years_df,\
+    year_count,yr_avg_dec_df,htcld_years,warmest_day,\
+    warmest_day_temp,coldest_day,coldest_day_temp,bf_intercept,\
+    bf_slope,bf,table_df=weather.set_all_dfs(all_state_df)
 
     all_days_df['year']=all_days_df.YEAR.apply(int)
     all_days_df=all_days_df.loc[(all_days_df['year']>=slider_range[0])&\

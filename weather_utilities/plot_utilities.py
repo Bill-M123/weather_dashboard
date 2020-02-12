@@ -1,6 +1,12 @@
 import pandas as pd
+
+import dash
+import dash_table
+from dash_table.Format import Format, Scheme, Sign, Symbol
 import plotly.offline as pyo
 import plotly.graph_objs as go
+import dash_core_components as dcc
+import dash_html_components as html
 
 
 class Plot_Utils():
@@ -21,7 +27,6 @@ class Plot_Utils():
             xs=df[df.columns[0]].values
             #xs=list(range(len(xs)))
             ys=df[df.columns[col]].values
-            print(col,len(xs),len(ys))
             data.append(go.Scatter(x=xs,
                                     y=ys,
                                     mode='markers',
@@ -51,7 +56,6 @@ class Plot_Utils():
             xs=df[df.columns[0]].values
             #xs=list(range(len(xs)))
             ys=df[df.columns[col]].values
-            print(col,len(xs),len(ys))
             data.append(go.Scatter(x=xs,
                                     y=ys,
                                     mode='markers',
@@ -102,9 +106,6 @@ class Plot_Utils():
 
         b = numer / denum
         a = ybar - b * xbar
-
-        #print('best fit line:\ny = {:.2f} + {:.2f}x'.format(a, b))
-        #print('Slope(b): {:.2f}'.format(b))
 
         bf_line=pd.DataFrame()
         bf_line['YEAR']=X
@@ -168,7 +169,7 @@ class Plot_Utils():
                 name='Best Fit Annual Temp'),] #End Data
 
         layout={'title': 'Annual Highs, Lows, Averages, and Trend',
-                'legend':{'y':-.15,'orientation':'h'},
+                'legend':{'y':-.20,'orientation':'h'},
 
                 }
 
@@ -197,3 +198,91 @@ class Plot_Utils():
 
         fig={'data':data,'layout':layout}
         return fig
+
+    def initialize_slider(self,min=1940,max=2020,value=[1940,2020]):
+        return dcc.RangeSlider(id='range_slider',
+            min=min,max=max,step=10,
+            marks={i: i for i in range(1940,2030,20)},
+            #value=[min,max],
+            updatemode='drag')
+
+    def get_full_layout(self, table_df,
+    htcld_years,  years_df,dr_dn_options, map_html='my_cape_house.html',
+    station_id='USW00014739',slide_low=1940, slide_high=2020, ):
+
+        child=[html.Div(id='first-row',
+            className="first_row",
+            children = [
+
+        # Data Table
+        html.Div(id='summary-table',
+            className="summary_table",
+            children = [
+
+                dcc.Dropdown(id='ws-drop-down',
+                    className="dr_down",
+                    options=dr_dn_options,
+                    value=station_id,),
+
+                dash_table.DataTable(id='tablea',
+                columns=[{"name": i, "id": i} for i in table_df.columns],
+                data=table_df.to_dict('records'),
+                style_cell={'textAlign': 'left'},
+                style_header={
+                'backgroundColor': 'white',
+                'fontWeight': 'bold'},
+                style_as_list_view=True,
+                style_cell_conditional=[
+                {
+                    'if': {'column_id': 'Parameters'},
+                    'textAlign': 'left',
+                    'fontWeight': 'bold',
+                },
+                {
+                    'if': {'column_id': 'Dates'},
+                    'textAlign': 'center',
+                    'fontWeight': 'bold',
+                },
+                {
+                    'if': {'column_id': 'Temp'},
+                    'textAlign': 'right',
+                    'fontWeight': 'bold',
+                }
+                ]),
+
+            html.Div(id='slider_div',
+                className="slider-st",
+                children=[self.initialize_slider(value=[slide_low,slide_high])],),],#end Data Table Children
+            ),#End Data Table
+
+        html.Div(id='bar-div',
+            className='bar_div',
+            children = [dcc.Graph(id='bar-graph',
+                figure=self.get_htcld_bar_data(htcld_years),
+                config={'modeBarButtonsToRemove': ['toggleSpikelines',
+                    "select2d", "lasso2d","hoverCompareCartesian"]},
+                style={'vertical-align': 'top',
+                'width': '70%', 'height':'250px','margin-top': '10px',}),]), #End bar-div
+
+        html.Div(id='map=div',
+            className="map_style",
+            children = [html.Iframe(id='map',
+            srcDoc=open(map_html,'r').read(),
+            height='250vh', width='95%')],)],
+
+        ),#<--End First Row
+        html.Hr(),
+
+        #4 Readings per year
+        html.Div(id='second-row',
+            className="second_row",
+            children = [dcc.Graph(id='yearly-scatter',
+                    figure=self.get_annual_trend_data(years_df),
+                    config={'modeBarButtonsToRemove': ['toggleSpikelines',
+                    "select2d", "lasso2d","hoverCompareCartesian"]},
+                    style={'vertical-align': 'top',
+                    'width': '95%', 'height':'250px','margin-top': '10px',}
+                     )])#End second Row
+
+        ]
+        return child

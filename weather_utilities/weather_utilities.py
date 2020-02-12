@@ -1,17 +1,59 @@
 import pandas as pd
 import requests
 import os
+
 from weather_utilities.plot_utilities import Plot_Utils
+
 
 class Weather_Utils():
 
-    def __init__(self):
+    def __init__(self,initial_ws='USW00014739',old_sliders=[1940,2020],
+                startDate='1937-01-01',endDate='2019-12-31'):
         ''' Constructor for this class. '''
+        #self.weather =Weather_Utils()
+
         self.make_plot=Plot_Utils()
+        self.initial_ws=initial_ws
+        self.old_sliders=old_sliders
+        self.data_dir=os.getcwd()+'\\data\\'
+        self.all_state_df=\
+            self.open_all_state_data(self.data_dir+'ma_weather_stations.csv')
+
+        self.all_state_df['year']=\
+                    self.all_state_df.DATE.apply(lambda x: int(x.split('-')[0]))
+        self.all_days_df=\
+            self.all_state_df.loc[self.all_state_df.STATION==initial_ws,:]
+
+
+        self.raw_all_days_df=self.all_days_df.copy()
+        self.day_per_wk_df=self.one_day_per_week(self.all_days_df)
+
+        self.years_df=self.calculate_yearly_data(self.all_days_df)
+
+        self.year_count=len(self.all_days_df.YEAR.unique())
+        self.year_count,self.yearly_summary_df,self.htcld_years=\
+            self.calculate_yearly_summaries(self.years_df)
+
+        self.yr_avg_dec_df=self.yearly_summary_df.copy()
+        self.warmest_day,self.warmest_day_temp,self.coldest_day,\
+            self.coldest_day_temp=self.get_hot_cold_days(self.all_days_df)
+
+        self.bf_intercept,self.bf_slope,self.bf=\
+            self.make_plot.best_fit(self.years_df[['YEAR','T_avg']])
+        self.table_df=self.make_summary_table(self.all_days_df,self.bf_slope)
+
+        self.bf_line_df=self.bf.copy()
+
+
+        # Some flags
+        self.old_ws=self.initial_ws
+        self.current_state=[]
+        self.baseline_slope_df=self.bf_line_df
+        print('In init, all_days_df\n',self.all_days_df.head(6))
         return
 
     def get_weather_station_data(self,dataset='daily-summaries',
-        units='standard',stations='USW00014739',startDate='1937-01-01',
+        units='standard',stations= 'USW00014739',startDate='1937-01-01',
         endDate='2019-12-31'):
         '''Gets weather data from: https://www.ncei.noaa.gov using V1 of
         the latest API as of 1/26/2020.
@@ -37,7 +79,6 @@ class Weather_Utils():
 
         r = requests.get(base_url,params=params)
         if r.status_code == 200:
-            print('Data for {} found.\n'.format(params['stations']))
             df=pd.DataFrame(r.json())
             df.to_csv(params['stations']+'.csv')
             return df
@@ -61,9 +102,9 @@ class Weather_Utils():
     def open_all_state_data(self,file_name):
         '''Open all data df process as existing ws.'''
         weather_station_path=file_name
-        print('Weather_path {}'.format(weather_station_path))
-        p_df2=pd.read_csv(file_name)
-        p_df2=p_df2[['STATION','DATE','TMAX','TMIN']]
+        p_df2=pd.read_csv(file_name,index_col=0)
+        p_df2=p_df2[['NAME','STATE','STATION','DATE','LATITUDE',
+            'LONGITUDE','TMAX','TMIN']]
         p_df2['YEAR']=p_df2['DATE'].apply(lambda x: x.split('-')[0])
         return p_df2
 
@@ -90,9 +131,6 @@ class Weather_Utils():
                 print('{}: {}'.format(k,df2[k][0]))
                 if (k=='LATITUDE'):
                     hem=self.get_hemisphere(df2[k][0])
-                    print('SEASON: {}'.format(\
-                        self.get_season(df2['DATE'][0],
-                        hem=hem)))
         return
 
     def get_hemisphere(self,x):
@@ -228,7 +266,6 @@ class Weather_Utils():
         htcld_years=pd.merge(htcld_years,top_twenty,how='left',on='Decade')
         htcld_years=htcld_years.fillna(0)
 
-        print(htcld_years.head(10))
         return year_count,yearly_summary,htcld_years
 
     def make_summary_table(self,all_days_df,slope):
@@ -245,7 +282,6 @@ class Weather_Utils():
         table_df['Temp']=[warmest_day_temp,hottest_year_temp,
             coldest_day_temp,coldest_year_temp]
         table_df['Temp']=table_df['Temp'].apply(lambda x: '{:0.1f} F'.format(x))
-        print(all_days_df.head(2))
         sl_str='{} F/yr'.format(round(slope,2))
         tmp=pd.DataFrame(columns=['Parameters','Dates','Temp'],
             data=[['Avg. Temp. Change','',sl_str]])
@@ -276,6 +312,8 @@ class Weather_Utils():
 
     def set_all_dfs(self,all_state_df,station_id='USW00014739',
         slider_low=1940,slider_high=2020):
+        print('Slider_low: {} Slider_high {}'.format(slider_low,slider_high))
+
         all_days_df=all_state_df.loc[all_state_df.STATION==station_id,:].copy()
         raw_all_days_df=all_days_df.copy()
         all_days_df['year']=all_days_df.YEAR.apply(int)
@@ -291,13 +329,81 @@ class Weather_Utils():
             self.get_hot_cold_days(all_days_df)
         hottest_year,hottest_year_temp,coldest_year,coldest_year_temp=\
             self.get_hot_cold_years(all_days_df)
-
+        print('hottest',hottest_year,hottest_year_temp,
+            coldest_year,coldest_year_temp)
         bf_intercept,bf_slope,bf=\
             self.make_plot.best_fit(years_df[['YEAR','T_avg']])
 
         table_df=self.make_summary_table(all_days_df,bf_slope)
-
+        print('table_df in function\n',table_df.head(5) )
         return all_days_df, raw_all_days_df,day_per_wk_df,years_df,\
             year_count,yr_avg_dec_df,htcld_years,warmest_day,\
             warmest_day_temp,coldest_day,coldest_day_temp,bf_intercept,\
             bf_slope,bf,table_df
+
+    def update_weather_station_change(self,new_ws):
+            '''Accept new ws, update data to reflect change.'''
+
+            self.initial_ws=new_ws
+            self.old_sliders=[1940,2020]
+
+            self.all_days_df=\
+                self.all_state_df.loc[self.all_state_df.STATION==new_ws,:]
+            self.raw_all_days_df=self.all_days_df.copy()
+            self.day_per_wk_df=self.one_day_per_week(self.all_days_df)
+
+            self.years_df=self.calculate_yearly_data(self.all_days_df)
+
+            self.year_count=len(self.all_days_df.YEAR.unique())
+            self.year_count,self.yearly_summary_df,self.htcld_years=\
+                self.calculate_yearly_summaries(self.years_df)
+
+            self.yr_avg_dec_df=self.yearly_summary_df.copy()
+            self.warmest_day,self.warmest_day_temp,self.coldest_day,\
+                self.coldest_day_temp=self.get_hot_cold_days(self.all_days_df)
+
+            self.bf_intercept,self.bf_slope,self.bf=\
+                self.make_plot.best_fit(self.years_df[['YEAR','T_avg']])
+            self.table_df=self.make_summary_table(self.all_days_df,self.bf_slope)
+
+            self.bf_line_df=self.bf.copy()
+
+
+            # Some flags
+            self.old_ws=self.initial_ws
+            self.baseline_slope_df=self.bf_line_df
+            print('In init, all_days_df\n',self.all_days_df.head(6))
+            return
+
+    def update_slider_change(self,new_slider_range):
+            '''Accept new ws, update data to reflect change.'''
+
+
+            self.old_sliders=new_slider_range
+
+            print('Raw:\n',self.raw_all_days_df.head(2))
+            self.all_days_df=self.raw_all_days_df.copy()
+            self.all_days_df=\
+                self.all_days_df.loc[(self.all_days_df.year>=new_slider_range[0])&\
+                (self.all_days_df.year<new_slider_range[1]),:]
+            self.day_per_wk_df=self.one_day_per_week(self.all_days_df)
+
+            self.years_df=self.calculate_yearly_data(self.all_days_df)
+
+            self.year_count=len(self.all_days_df.YEAR.unique())
+            self.year_count,self.yearly_summary_df,tmp=\
+                self.calculate_yearly_summaries(self.years_df)
+
+            self.yr_avg_dec_df=self.yearly_summary_df.copy()
+            self.warmest_day,self.warmest_day_temp,self.coldest_day,\
+                self.coldest_day_temp=self.get_hot_cold_days(self.all_days_df)
+
+            self.bf_intercept,self.bf_slope,self.bf=\
+                self.make_plot.best_fit(self.years_df[['YEAR','T_avg']])
+            self.table_df=self.make_summary_table(self.all_days_df,self.bf_slope)
+
+            self.bf_line_df=self.bf.copy()
+
+            print('In function, all_days_df head:\n',self.all_days_df.head(3))
+            print('In function, all_days_df tail:\n',self.all_days_df.tail(3))
+            return

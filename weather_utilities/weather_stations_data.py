@@ -131,6 +131,7 @@ class Weather_Stations_Data():
         '''df is state df with all data.  return list of dicts in form:
         [{'label':name,'value':ws_name},....], as well as a list for markers
         in the map'''
+
         df['tmp']=df.apply(lambda x: (x.NAME,x.STATION,x.LATITUDE,x.LONGITUDE),
             axis=1)
         ws_list=sorted(df.tmp.unique())
