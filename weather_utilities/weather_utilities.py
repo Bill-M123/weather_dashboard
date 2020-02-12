@@ -15,7 +15,7 @@ class Weather_Utils():
         self.make_plot=Plot_Utils()
         self.initial_ws=initial_ws
         self.old_sliders=old_sliders
-        self.data_dir=os.getcwd()+'\\data\\'
+        self.data_dir=os.getcwd()+'/Data/'
         self.all_state_df=\
             self.open_all_state_data(self.data_dir+'ma_weather_stations.csv')
 
