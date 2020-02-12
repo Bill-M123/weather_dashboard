@@ -1,1 +1,1 @@
-web: gunicorn weather_dash4:server --timeout 90
+web: gunicorn weather_dash4:server -k 'eventlet'
