@@ -24,7 +24,7 @@ print('directory files:\n',os.listdir())
 data_dir=os.getcwd()+'/data/'
 
 print('data_dir: ',data_dir)
-print('data_dir_files:\n'os.listdir(data_dir))
+print('data_dir_files:\n',os.listdir(data_dir))
 weather =Weather_Utils()
 
 print('Starting weather_utilities.....All-state.....\n',weather.all_state_df.head(7))
@@ -65,7 +65,7 @@ weather.current_state=make_plot.get_full_layout(table_df=weather.table_df,
             station_id=weather.old_ws,
             slide_low=weather.old_sliders[0],
             slide_high=weather.old_sliders[1],)
-
+server = app.server
 app.layout = html.Div(id='full_layout',children=weather.current_state)
 
 @app.callback(Output('full_layout','children'),
