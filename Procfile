@@ -1,1 +1,1 @@
-web: gunicorn weather_dash4:server --timeout 300
+web: gunicorn weather_dash4:server --timeout 60
