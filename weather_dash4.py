@@ -18,7 +18,9 @@ from weather_utilities.weather_utilities import Weather_Utils
 from weather_utilities.plot_utilities import Plot_Utils
 from weather_utilities.weather_stations_data import Weather_Stations_Data
 
-data_dir=os.getcwd()+'\\data\\'
+cwd=os.getcwd()
+print('Current working Directory: ',cwd)
+data_dir=os.getcwd()+'/data/'
 weather =Weather_Utils()
 
 print('Starting weather_utilities.....All-state.....\n',weather.all_state_df.head(7))
