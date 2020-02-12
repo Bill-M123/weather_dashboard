@@ -21,9 +21,11 @@ from weather_utilities.weather_stations_data import Weather_Stations_Data
 cwd=os.getcwd()
 print('Current working Directory: ',cwd)
 print('directory files:\n',os.listdir())
-data_dir=os.getcwd()+'/data/'
+
+data_dir=os.getcwd()+'/Data/'
 
 print('data_dir: ',data_dir)
+print('assets: ',os.getcwd()+'/assets/')
 print('data_dir_files:\n',os.listdir(data_dir))
 weather =Weather_Utils()
 
