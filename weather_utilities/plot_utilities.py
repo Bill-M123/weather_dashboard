@@ -201,16 +201,17 @@ class Plot_Utils():
         return fig
 
     def initialize_slider(self,min=1940,max=2020,value=[1940,2020]):
+        print('In initialize_slider: min: {} max {} value: {}'.format(min,max,value))
         return dcc.RangeSlider(id='range_slider',
             min=min,max=max,step=10,
             marks={i: i for i in range(1940,2030,20)},
-            #value=[min,max],
+            value=[min,max],
             updatemode='drag')
 
     def get_full_layout(self, table_df,
     htcld_years,  years_df,dr_dn_options, map_html='my_cape_house.html',
     station_id='USW00014739',slide_low=1940, slide_high=2020, ):
-
+        print('In get_full_layout: slidelow: {} slidehigh {}'.format(slide_low,slide_high))
         child=[html.Div(id='first-row',
             className="first_row",
             children = [
@@ -250,6 +251,7 @@ class Plot_Utils():
                     'fontWeight': 'bold',
                 }
                 ]),
+
 
             html.Div(id='slider_div',
                 className="slider-st",

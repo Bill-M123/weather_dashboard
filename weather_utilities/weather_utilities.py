@@ -378,11 +378,12 @@ class Weather_Utils():
     def update_slider_change(self,new_slider_range):
             '''Accept new ws, update data to reflect change.'''
 
-
             self.old_sliders=new_slider_range
 
             print('Raw:\n',self.raw_all_days_df.head(2))
             self.all_days_df=self.raw_all_days_df.copy()
+
+            print('new_slider_range: {} {}'.format(type(new_slider_range),new_slider_range))
             self.all_days_df=\
                 self.all_days_df.loc[(self.all_days_df.year>=new_slider_range[0])&\
                 (self.all_days_df.year<new_slider_range[1]),:]

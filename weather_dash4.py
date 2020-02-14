@@ -67,7 +67,7 @@ weather.current_state=make_plot.get_full_layout(table_df=weather.table_df,
             station_id=weather.old_ws,
             slide_low=weather.old_sliders[0],
             slide_high=weather.old_sliders[1],)
-server = app.server
+#server = app.server
 app.layout = html.Div(id='full_layout',children=weather.current_state)
 
 @app.callback(Output('full_layout','children'),
@@ -102,6 +102,7 @@ def update_value(slider_range,ws_id):
         print('Old: {}  New: {}'.format(weather.old_sliders,slider_range))
 
         weather.update_slider_change(slider_range)
+        print('In main, post update_slider_change: {}'.format(slider_range))
 
         weather.bf_intercept,weather.bf_slope,weather.bf_line_df=\
             weather.make_plot.best_fit(weather.years_df[['YEAR','T_avg']])
